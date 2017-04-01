@@ -21,8 +21,7 @@ namespace Hardware
         static private int  MAX_LENGTH_BYTES = 10;
 
         //   your path can modify
-        public static string path =
-            @"c:\Users\Home\documents\visual studio 2015\Projects\OS\Hardware\HDD.txt";
+        public static string path = Directory.GetCurrentDirectory()+"\\HDD.txt";
 
         // kaskatelia esi uxaki threadi hamarem senc grel te che amen mi methodi 
         // mejel karam open cloaase anem  
@@ -43,45 +42,43 @@ namespace Hardware
             public int length;
         }
 
+        //update
+     [MethodImpl(MethodImplOptions.Synchronized)]
         public static void ThreadPoolCallbackWrite(Object threadContext)
         {
-            Write threads = (Write)threadContext;
-            write(threads.data,threads.offset,threads.length);
+            Write threadValue = (Write)threadContext;
+            
+            fs.Seek(threadValue.offset, SeekOrigin.End);
+
+            //fs.Write(threadValue.data, 0, threadValue.length);
+            for (int i = 0; i < threadValue.length; i++) 
+                fs.WriteByte(threadValue.data[i]);
+
+            //Console.WriteLine("thread");
         }
 
-        /*
-        MAX_OFFSET = log2(HDD.SIZE)
-        */
-        //[MethodImpl(MethodImplOptions.Synchronized)]
-        public static void write(byte[] data, long offset, int length = -1) {
-
+        //update
+        public static void write(byte[] data, long offset, int length = -1)
+        {
             if (length == -1) length = data.Length;
-
-            int count = 0;
-            while(length / MAX_LENGTH_BYTES > 1) {
-                byte[] dataX = new byte[MAX_LENGTH_BYTES];
-
-                for (int i = 0; i < MAX_LENGTH_BYTES; i++)
-                 dataX[i] = data[count + i];
-
-                count += MAX_LENGTH_BYTES;
-
-                Write state = new Write(dataX, MAX_LENGTH_BYTES, MAX_LENGTH_BYTES);
+            
+            while (length / MAX_LENGTH_BYTES != 0)
+            {
+                byte[] dataThread = new byte[MAX_LENGTH_BYTES];
+                Write state = new Write(data, offset, length);
                 ThreadPool.QueueUserWorkItem(HDD.ThreadPoolCallbackWrite, (Object)state);
+                
                 length -= MAX_LENGTH_BYTES;
             }
 
-            // Thread newThread = new Thread(raed);
-            // newThread.Start(data,offset,length);
-            //var fs = File.Open(path,FileMode.Open,FileAccess.Write);
-
-            fs.Seek(offset,SeekOrigin.Begin);
-
-            fs.Write(data, 0, length);
-
-            Console.WriteLine("write "+path);
-           // fs.Close();
-
+            if (length != 0)
+            {
+                Write state = new Write(data, 0, length);
+                ThreadPool.QueueUserWorkItem(HDD.ThreadPoolCallbackWrite, (Object)state);
+            }
+          
+            Console.WriteLine("The End Write");
+         
         }
 
         private class Read
@@ -106,9 +103,7 @@ namespace Hardware
             read(ref threads.data, threads.offset, threads.count);
         }
 
-        /*
-            MAX_OFFSET = log2(HDD.SIZE)
-       */
+      
         // count <= raed.Length
         //[MethodImpl(MethodImplOptions.Synchronized)]
         public static void read(ref byte[] data, long offset, int count) {
@@ -161,11 +156,6 @@ namespace Hardware
 
 }
 
-
-/*
-31.03.2017
-if you have a question write  kirakosyan0001@gmail.com
-*/
 /*
 please help us
 */
