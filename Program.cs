@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 //using System.Collections.Generic;
 //using System.Linq;
 //using System.Text;
@@ -11,7 +11,7 @@ namespace Hardware
 {
 	class HDD{
 		
-		public static readonly int THWB = 3;//thread write bytes
+		public static readonly int THWB = 1;//thread write bytes
 		public static readonly string path = Directory.GetCurrentDirectory()+"/HDD.txt";
 		private static FileStream fs;//= File.Open (HDD.path, FileMode.Open,FileAccess.ReadWrite);
 		public static int count = 0;
@@ -31,47 +31,56 @@ namespace Hardware
 		{
 			ToWrite threadValue = (ToWrite)threadContext;
 
-			fs.Seek(0, SeekOrigin.End);
-
-			for (int i = 0; i < threadValue.length; i++) 
-				fs.WriteByte(threadValue.data[i]);
-
+			for (int i = 0; i < threadValue.length; i++)
+				lock(fs) {
+					fs.Seek (0, SeekOrigin.End);
+					fs.WriteByte (threadValue.data [i]);
+					count--;
+				};
+			
 			Console.WriteLine ("thread");
-
-			count--;
+				
 			if (count == 0) {
-				Console.WriteLine ("the end ____thradsss");
+
+				Console.WriteLine ("the end write");
+
 				fs.Close ();
 				fs = null;
 			}
-			
-			
+
 		}
 
 		public static void Write(byte[] data,int length =-1){
 			while(fs!=null)
 				Console.WriteLine ("nULLL");
+
 			fs = File.Open (HDD.path, FileMode.Open, FileAccess.Write);
 
 			if (length == -1)
 				length = data.Length;
 
 			int currentPosition = 0;
+
 			while (length > 0) {
 				Thread newThraed = new Thread (HDD.ThreadCallWrite);
+
 				count++;
+
 				byte[] dataThread = new byte[length];
 
 				if (length <= THWB) {
+
 					for (int i = 0; i < length; i++) {
 						dataThread [i] = data [i + currentPosition];
 					}
+
 					currentPosition += length;
-					newThraed.Start(new ToWrite(dataThread,length));
+					newThraed.Start (new ToWrite (dataThread, length));
+
 					break;
 				}
 
-					for (int i = 0; i < THWB; i++) {
+				for (int i = 0; i < THWB; i++) {
 					dataThread [i] = data [i + currentPosition];
 				}
 
@@ -99,7 +108,6 @@ namespace Hardware
 			string s = "hesa ";
 			for (int i = 0; i < s.Length; i++) {
 				byte[] stringOnBytes = BitConverter.GetBytes (s [i]);
-
 				HDD.Write (stringOnBytes);
 			}
 		}
