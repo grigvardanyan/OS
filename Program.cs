@@ -5,7 +5,6 @@ using System.Threading;
 namespace Hardware
 {
 
-
 	public delegate void WriteEndHandler();
 
 	class HDD{
