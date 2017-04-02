@@ -1,20 +1,32 @@
 using System;
-//using System.Collections.Generic;
-//using System.Linq;
-//using System.Text;
-//using System.Threading.Tasks;
 using System.IO;
-//using System.Runtime.CompilerServices;
 using System.Threading;
 
 namespace Hardware
 {
+
+
+	public delegate void WriteEndHandler();
+
 	class HDD{
-		
-		public static readonly int THWB = 1;//thread write bytes
-		public static readonly string path = Directory.GetCurrentDirectory()+"/HDD.txt";
-		private static FileStream fs;//= File.Open (HDD.path, FileMode.Open,FileAccess.ReadWrite);
-		public static int count = 0;
+		public static readonly int THWB = 6;											//thread write bytes
+
+		//file must be creat
+		public static readonly string path = Directory.GetCurrentDirectory()+"/HDD.txt";//Linux path file //on windows +"\\HDD.txt"
+
+		public static int count; 														//counts thread            'count = length/THWB'
+
+		public static int cCTEndTs = 0;													//current count to end threads 
+
+		private static FileStream fs;													//= File.Open (HDD.path, FileMode.Open,FileAccess.ReadWrite);
+
+		private static readonly int OFFSET = 0;											//offset of data   //same for read and write
+
+		public static event WriteEndHandler WriteHandler = WHand;
+
+		private static void WHand(){
+			Console.WriteLine ("End of write");
+		}
 
 		private class ToWrite
 		{
@@ -33,38 +45,44 @@ namespace Hardware
 
 			for (int i = 0; i < threadValue.length; i++)
 				lock(fs) {
-					fs.Seek (0, SeekOrigin.End);
+					fs.Seek (OFFSET, SeekOrigin.End);
 					fs.WriteByte (threadValue.data [i]);
-					count--;
 				};
 			
-			Console.WriteLine ("thread");
-				
-			if (count == 0) {
+			Console.WriteLine ("thread run");
 
-				Console.WriteLine ("the end write");
+			lock (fs) {
+				cCTEndTs++;
 
-				fs.Close ();
-				fs = null;
+				if (cCTEndTs == count) {
+					cCTEndTs = 0;
+					fs.Close ();
+					WriteHandler();
+				}
 			}
-
+		
 		}
 
-		public static void Write(byte[] data,int length =-1){
-			while(fs!=null)
-				Console.WriteLine ("nULLL");
+		public static long Write(byte[] data,int length =-1){
+			
+			while(fs!=null&&fs.CanWrite==true)
+				Console.WriteLine ("Write wait");
 
 			fs = File.Open (HDD.path, FileMode.Open, FileAccess.Write);
+			long position =  fs.Length;
 
 			if (length == -1)
 				length = data.Length;
 
 			int currentPosition = 0;
 
+			if (length < THWB)
+			count = 1;
+			else count = length/THWB;
+
+
 			while (length > 0) {
 				Thread newThraed = new Thread (HDD.ThreadCallWrite);
-
-				count++;
 
 				byte[] dataThread = new byte[length];
 
@@ -85,13 +103,13 @@ namespace Hardware
 				}
 
 				newThraed.Start(new ToWrite(dataThread,THWB));
-							
+
 				currentPosition +=THWB;
 
 				length -= THWB;
 			}
 
-			Console.WriteLine ("End of Write");	
+			return position;
 		}
 
 
@@ -102,14 +120,28 @@ namespace Hardware
 	{
 		public static void Main (string[] args)
 		{
-			//int intValue = 13;
-			//byte [] intValueOnByteArray =  BitConverter.GetBytes(intValue);
-	
+			int intValue = 13;
+			byte [] intValueOnByteArray =  BitConverter.GetBytes(intValue);
+			HDD.Write (intValueOnByteArray);
+
+			intValue = 14;
+			intValueOnByteArray =  BitConverter.GetBytes(intValue);
+			HDD.Write (intValueOnByteArray);
+
+			byte[] stringOnBytes;
+			;
+
 			string s = "hesa ";
+			long[] position = new long[s.Length];
+
 			for (int i = 0; i < s.Length; i++) {
-				byte[] stringOnBytes = BitConverter.GetBytes (s [i]);
-				HDD.Write (stringOnBytes);
+				stringOnBytes = BitConverter.GetBytes (s [i]);
+				position [i] = HDD.Write (stringOnBytes);
 			}
+
+			for(int i = 0;i<position.Length;i++)
+				Console.WriteLine ($"position[{i}] = {position[i]}");
+			
 		}
 	}
 }
