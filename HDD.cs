@@ -8,7 +8,7 @@ namespace Hardware
 
     public delegate void ReadEndHandler();
 
-
+    //HDD termination
     class HDD
     {
         public static readonly int THWB = 15;//thread write bytes
