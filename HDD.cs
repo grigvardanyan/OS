@@ -98,9 +98,7 @@ namespace Hardware
 
             int currentPosition = 0;
 
-            if (length < THWB)
-                countWrite = 1;
-            else countWrite = length / THWB+1;
+            countWrite = length / THWB+1;
 
 
             while (length > 0)
@@ -192,9 +190,9 @@ namespace Hardware
 
             int currentPosition = 0;
 
-            countRead = count < THRB ? 1 : count / THRB+1;
+            countRead =  count / THRB+1;
 
-            Console.WriteLine("hesasdfhasjk   "+countRead);
+            
             while (count > 0)
             {
                 Thread newThraed = new Thread(HDD.ThreadCallRead);
