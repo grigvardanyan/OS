@@ -4,6 +4,18 @@ using System.Threading;
 
 namespace Hardware
 {
+    class Monitor{
+		public static void Output(object obj){
+			Console.WriteLine (obj);
+		}
+	}
+
+	class Keyboard{
+		public static String Input(){
+			return Console.ReadLine ();
+		}
+	}
+
     public delegate void WriteEndHandler();
 
     public delegate void ReadEndHandler();
