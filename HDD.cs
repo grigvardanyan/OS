@@ -26,9 +26,9 @@ namespace Hardware
 	//HDD termination
 	class HDD
 	{
-		public static readonly int THWB = 15;//thread write bytes
+		public static readonly int THWB = 1;//thread write bytes
 
-		public static readonly int THRB = 15;//thraed read bytes
+		public static readonly int THRB = 1;//thraed read bytes
 
 		public static event WriteEndHandler WriteHandler = null;//= WHand;
 
@@ -101,7 +101,7 @@ namespace Hardware
 
 			int currentPosition = 0;
 
-			countWrite = length / THWB+1;
+			countWrite = length / THWB+((length%THWB>0)?1:0);
 
 
 			while (length > 0)
@@ -193,7 +193,7 @@ namespace Hardware
 
 			int currentPosition = 0;
 
-			countRead =  count / THRB+1;
+			countRead =  count / THRB+(count%THRB>0?1:0);
 
 
 			while (count > 0)
@@ -219,9 +219,6 @@ namespace Hardware
 			}
 
 		}
-
-
-
 
 
 		//file must be creat
