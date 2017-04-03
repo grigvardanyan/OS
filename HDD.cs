@@ -121,7 +121,7 @@ namespace Hardware
 						dataThread[i] = data[i + currentPosition];
 					}
 
-					newThraed.Start(new ToWrite(dataThread, (currentPosition + start), length - 1));//NAYEL
+					newThraed.Start(new ToWrite(dataThread, (currentPosition + start), length));
 
 					currentPosition += length;
 
@@ -202,7 +202,7 @@ namespace Hardware
 
 				if (count <= THRB)
 				{
-					newThraed.Start((Object)new ToRead(ref data, (currentPosition + offset), count - 1, currentPosition));
+					newThraed.Start((Object)new ToRead(ref data, (currentPosition + offset), count , currentPosition));
 
 					currentPosition += count;
 
