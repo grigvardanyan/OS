@@ -1,10 +1,12 @@
 using System;
 using System.IO;
 using System.Threading;
+using System.Threading.Tasks;
 
 namespace Hardware
 {
-    class Monitor{
+
+	class Monitor{
 		public static void Output(object obj){
 			Console.WriteLine (obj);
 		}
@@ -16,307 +18,311 @@ namespace Hardware
 		}
 	}
 
-    public delegate void WriteEndHandler();
 
-    public delegate void ReadEndHandler();
+	public delegate void WriteEndHandler();
 
-    //HDD termination
-    class HDD
-    {
-        public static readonly int THWB = 15;//thread write bytes
+	public delegate void ReadEndHandler();
 
-        public static readonly int THRB = 15;//thraed read bytes
+	//HDD termination
+	class HDD
+	{
+		public static readonly int THWB = 15;//thread write bytes
 
-        public static event WriteEndHandler WriteHandler = null;//= WHand;
+		public static readonly int THRB = 15;//thraed read bytes
 
-        public static event ReadEndHandler ReadHandler = null;// = RHand;
+		public static event WriteEndHandler WriteHandler = null;//= WHand;
 
-        public static bool isNullWriteHandler() {
+		public static event ReadEndHandler ReadHandler = null;// = RHand;
 
-            if(WriteHandler == null)
-                return true;
-            
-            return false;
-        }
+		public static bool isNullWriteHandler() {
 
-        public static bool isNullReadHandler()
-        {
+			if(WriteHandler == null)
+				return true;
 
-            if (ReadHandler == null)
-                return true;
+			return false;
+		}
 
-            return false;
-        }
+		public static bool isNullReadHandler()
+		{
 
-        public static void ThreadCallWrite(Object threadContext)
-        {
-            ToWrite threadValue = (ToWrite)threadContext;
+			if (ReadHandler == null)
+				return true;
 
-            for (int i = 0; i < threadValue.length; i++)
-                lock (fs)
-                {
-                    fs.Seek( threadValue.start + i, SeekOrigin.Begin);///////////nayell OFFSET urish  arjeqneri depqum
-                    fs.WriteByte(threadValue.data[i]);                    
-                };
+			return false;
+		}
 
-            Console.WriteLine("write thread run");
+		public static void ThreadCallWrite(Object threadContext)
+		{
+			ToWrite threadValue = (ToWrite)threadContext;
 
-            lock (fs)
-            {
-                cCTEndWTs++;
+			for (int i = 0; i < threadValue.length; i++)
+				lock (fs)
+				{
+					fs.Seek( threadValue.start + i, SeekOrigin.Begin);
+					fs.WriteByte(threadValue.data[i]);                    
+				};
 
-                if (cCTEndWTs == countWrite)
-                {
-                    cCTEndWTs = 0;
-                    fs.Close();
-                    if (WriteHandler != null)
-                    {
-                        WriteHandler();
-                        WriteHandler = null;
-                    }
-                }
-            }
+			Monitor.Output("HDD write thread run");
 
-        }
+			lock (fs)
+			{
+				cCTEndWTs++;
 
-        public static void Write(byte[] data, int start, int length = -1)
-        {
+				if (cCTEndWTs == countWrite)
+				{
+					cCTEndWTs = 0;
+					fs.Close();
+					if (WriteHandler != null)
+					{
+						WriteHandler();
+						WriteHandler = null;
+					}
+				}
+			}
 
-            while (fs != null)
-            {
-                if (fs.CanWrite == true || fs.CanRead == true)
-                    Console.WriteLine("Write wait");
-                else break;
-            }
+		}
 
-            WriteHandler = WHand;//NAYEL
+		public static void Write(byte[] data, int start, int length = -1)
+		{
 
-            fs = File.Open(HDD.path, FileMode.Open, FileAccess.Write);
+			while (fs != null)
+			{
+				if (fs.CanWrite == true || fs.CanRead == true)
+					Monitor.Output("HDD Write wait");
+				else break;
+			}
 
-            if (length == -1)
-                length = data.Length;
+			WriteHandler = WHand;//NAYEL
 
-            int currentPosition = 0;
+			fs = File.Open(HDD.path, FileMode.Open, FileAccess.Write);
 
-            countWrite = length / THWB+1;
+			if (length == -1)
+				length = data.Length;
 
+			int currentPosition = 0;
 
-            while (length > 0)
-            {
-                Thread newThraed = new Thread(HDD.ThreadCallWrite);
+			countWrite = length / THWB+1;
 
-              
 
-                byte[] dataThread = new byte[length < THWB ? length : THWB];
+			while (length > 0)
+			{
+				Thread newThraed = new Thread(HDD.ThreadCallWrite);
 
 
-                if (length <= THWB)
-                {
 
-                    for (int i = 0; i < length; i++)
-                    {
-                        dataThread[i] = data[i + currentPosition];
-                    }
+				byte[] dataThread = new byte[length < THWB ? length : THWB];
 
-                    newThraed.Start(new ToWrite(dataThread, (currentPosition + start), length - 1));//NAYEL
 
-                    currentPosition += length;
+				if (length <= THWB)
+				{
 
-                    length -= THWB;
+					for (int i = 0; i < length; i++)
+					{
+						dataThread[i] = data[i + currentPosition];
+					}
 
-                    break;
-                }
+					newThraed.Start(new ToWrite(dataThread, (currentPosition + start), length - 1));//NAYEL
 
-                for (int i = 0; i < THWB; i++)
-                {
-                    dataThread[i] = data[i + currentPosition];
-                }
+					currentPosition += length;
 
-                newThraed.Start(new ToWrite(dataThread, currentPosition + start, THWB));
+					length -= THWB;
 
-                currentPosition += THWB;
+					break;
+				}
 
-                length -= THWB;
-            }
+				for (int i = 0; i < THWB; i++)
+				{
+					dataThread[i] = data[i + currentPosition];
+				}
 
-        }
+				newThraed.Start(new ToWrite(dataThread, currentPosition + start, THWB));
 
+				currentPosition += THWB;
 
-        public static void ThreadCallRead( Object threadContext)
-        {
-            ToRead threadValue = (ToRead)threadContext;
+				length -= THWB;
+			}
 
-            lock (fs)
-            {
-                fs.Seek( threadValue.offset , SeekOrigin.Begin);
-                
-                fs.Read(threadValue.data,threadValue.index, threadValue.count);
-             };
+		}
 
-            Console.WriteLine("raed thread run");
 
-            lock (fs)
-            {
-                cCTEndRTs++;
+		public static void ThreadCallRead( Object threadContext)
+		{
+			ToRead threadValue = (ToRead)threadContext;
 
-                if (cCTEndRTs == countRead)
-                {
-                    cCTEndRTs = 0;
-                    fs.Close();
-                    if (ReadHandler != null)
-                    {
-                        ReadHandler();
-                        ReadHandler = null;
-                    }
-                }
-            }
+			lock (fs)
+			{
+				fs.Seek( threadValue.offset , SeekOrigin.Begin);
 
-        }
+				fs.Read(threadValue.data,threadValue.index, threadValue.count);
+			};
 
-        public static void Read(ref byte[] data, int offset, int count = -1)
-        {
-            if (count == -1) count = data.Length;
+			Monitor.Output("HDD raed thread run");
 
-            while (fs != null)
-            {
-                if (fs.CanWrite == true || fs.CanRead == true)
-                    Console.WriteLine("Read wait");
-                else break;
-            }
+			lock (fs)
+			{
+				cCTEndRTs++;
 
-            ReadHandler = RHand;//NAYEL
+				if (cCTEndRTs == countRead)
+				{
+					cCTEndRTs = 0;
+					fs.Close();
+					if (ReadHandler != null)
+					{
+						ReadHandler();
+						ReadHandler = null;
+					}
+				}
+			}
 
-            fs = File.Open(path, FileMode.Open, FileAccess.Read);
+		}
 
-            int currentPosition = 0;
+		public static void Read(ref byte[] data, int offset, int count = -1)
+		{
+			if (count == -1) count = data.Length;
 
-            countRead =  count / THRB+1;
+			while (fs != null)
+			{
+				if (fs.CanWrite == true || fs.CanRead == true)
+					Monitor.Output("HDD Read wait");
+				else break;
+			}
 
-            
-            while (count > 0)
-            {
-                Thread newThraed = new Thread(HDD.ThreadCallRead);
+			ReadHandler = RHand;//NAYEL
 
-                if (count <= THRB)
-                {
-                    newThraed.Start((Object)new ToRead(ref data, (currentPosition + offset), count - 1, currentPosition));
+			fs = File.Open(path, FileMode.Open, FileAccess.Read);
 
-                    currentPosition += count;
+			int currentPosition = 0;
 
-                    count -= THWB;
+			countRead =  count / THRB+1;
 
-                    break;
-                }
 
-                newThraed.Start((Object)new ToRead(ref data, currentPosition + offset, THRB, currentPosition));
+			while (count > 0)
+			{
+				Thread newThraed = new Thread(HDD.ThreadCallRead);
 
-                currentPosition += THRB;
+				if (count <= THRB)
+				{
+					newThraed.Start((Object)new ToRead(ref data, (currentPosition + offset), count - 1, currentPosition));
 
-                count -= THRB;
-            }
+					currentPosition += count;
 
-        }
+					count -= THWB;
 
+					break;
+				}
 
+				newThraed.Start((Object)new ToRead(ref data, currentPosition + offset, THRB, currentPosition));
 
+				currentPosition += THRB;
 
+				count -= THRB;
+			}
 
-        //file must be creat
-        public static readonly string path = Directory.GetCurrentDirectory() + "/HDD.txt";//Linux path file //on windows +"\\HDD.txt"
+		}
 
-        private static int countWrite;//counts thread            'countWrite = length/THWB'
 
-        private static int countRead; //counts thread            'countRead = length/TRWB'
 
-        private static int cCTEndWTs = 0;//current count to end write threads 
 
-        private static int cCTEndRTs = 0;//current count to end read threads 
 
-        private static FileStream fs; //= File.Open (HDD.path, FileMode.Open,FileAccess.ReadWrite);
+		//file must be creat
+		public static readonly string path = Directory.GetCurrentDirectory() + "/HDD.txt";//Linux path file //on windows +"\\HDD.txt"
 
-        private static readonly int OFFSET = 0; //offset of data   //same for read and write
+		private static int countWrite;//counts thread            'countWrite = length/THWB'
 
-        private static void RHand()
-        {
-            Console.WriteLine("End of read");
-        }
+		private static int countRead; //counts thread            'countRead = length/TRWB'
 
-        private static void WHand()
-        {
-            Console.WriteLine("End of write");
-        }
+		private static int cCTEndWTs = 0;//current count to end write threads 
 
-        private class ToWrite
-        {
-            public ToWrite(byte[] data, int start, int length)
-            {
-                this.data = data;
-                this.length = length;
-                this.start = start;
-            }
-            public int start;
-            public byte[] data;
-            public int length;
-        }
+		private static int cCTEndRTs = 0;//current count to end read threads 
 
-        private class ToRead
-        {
-            public ToRead(ref byte[] data, int offset, int count, int index)
-            {
-                this.index = index;
-                this.offset = offset;
-                this.count = count;
-                this.data = data;
-              
-            }
-            public byte[] data;
-            public int index;
-            public int offset;
-            public int count;
-        }
+		private static FileStream fs; //= File.Open (HDD.path, FileMode.Open,FileAccess.ReadWrite);
 
+		private static void RHand()
+		{
+			Monitor.Output("HDD End of read");
+		}
 
+		private static void WHand()
+		{
+			Monitor.Output("HDD End of write");
+		}
 
-    }
+		private class ToWrite
+		{
+			public ToWrite(byte[] data, int start, int length)
+			{
+				this.data = data;
+				this.length = length;
+				this.start = start;
+			}
+			public int start;
+			public byte[] data;
+			public int length;
+		}
 
-    ///////////////// TEST ////////////////////
-    class MainClass
-    {
-        public static void Main(string[] args)
-        {
-            int intValue = 82;
-            byte[] intValueOnByteArray = BitConverter.GetBytes(intValue);
+		private class ToRead
+		{
+			public ToRead(ref byte[] data, int offset, int count, int index)
+			{
+				this.index = index;
+				this.offset = offset;
+				this.count = count;
+				this.data = data;
 
-           // HDD.Write(intValueOnByteArray, 18);
+			}
+			public byte[] data;
+			public int index;
+			public int offset;
+			public int count;
+		}
 
-            intValue = 19;
-            //intValueOnByteArray = BitConverter.GetBytes(intValue);
-            HDD.Write(intValueOnByteArray, 24);
 
 
-            byte[] h = new byte[40];
+	}
 
-            byte[] stringOnBytes;
 
-            string s = "hes1a ";
+	///////////////// TEST ////////////////////
+	class MainClass
+	{
+		public static void Main(string[] args)
+		{
+			
+			int intValue = 82;
+			byte[] intValueOnByteArray = BitConverter.GetBytes(intValue);
 
-            for (int i = 0; i < s.Length; i++)
-            {
-                stringOnBytes = BitConverter.GetBytes(s[i]);
-                HDD.Write(stringOnBytes, i);
-            }
+			// HDD.Write(intValueOnByteArray, 18);
 
-            HDD.Read(ref h, 0,40);
-           
-            //for (int i = 0; i < 100000000; i++) ;
+			intValue = 19;
+			//intValueOnByteArray = BitConverter.GetBytes(intValue);
+			HDD.Write(intValueOnByteArray, 24);
 
-            while (!HDD.isNullReadHandler()) ;
-            for (int i = 0; i < h.Length; i++)
-            {
-                Console.Write(i); Console.WriteLine( "  "+h[i]);
-            }
 
-            
-        }
-    }
+			byte[] h = new byte[40];
+
+			byte[] stringOnBytes;
+
+			string s = "hes1a ";
+
+			for (int i = 0; i < s.Length; i++)
+			{
+				stringOnBytes = BitConverter.GetBytes(s[i]);
+				HDD.Write(stringOnBytes, i);
+			}
+
+			HDD.Read(ref h, 0,40);
+
+
+
+			while (!HDD.isNullReadHandler()) ;
+			for (int i = 0; i < h.Length; i++)
+			{
+				Console.Write(i); Console.WriteLine( "  "+h[i]);
+			}
+
+
+
+
+
+		}
+	}
 }
