@@ -15,7 +15,7 @@ class Clock
         //This method will Initailize our clock
         private static void TimeInit()
         {
-            time = new Timer(2000);
+            time = new System.Timers.Timer(2000);
             time.Elapsed += InteruptMassage;
             time.AutoReset = true;
             time.Enabled = true;
