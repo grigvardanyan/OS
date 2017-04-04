@@ -5,7 +5,35 @@ using System.Threading.Tasks;
 
 namespace Hardware
 {
+class Clock
+    {
+        //We will cause this method in process of initializing of Virtual Hardware
+        static public void InteruptClock()
+        {
+            TimeInit();
+        }
+        //This method will Initailize our clock
+        private static void TimeInit()
+        {
+            time = new Timer(2000);
+            time.Elapsed += InteruptMassage;
+            time.AutoReset = true;
+            time.Enabled = true;
+        }
+        //This method each 2 second(for example) will sent interupt.(we are still thinking how often it should be) 
+        private static void InteruptMassage(object obj, ElapsedEventArgs second)
+        {
+            
+            //In future we will add event in this block
+            Console.WriteLine("-{Interupt 0}", ++count);//Test massage
+        }
+        //Our fields
+        
+        private static System.Timers.Timer time;//
+        static int count = 0;//Test filed
 
+        
+    }
 	class Monitor{
 		public static void Output(object obj){
 			Console.WriteLine (obj);
@@ -315,6 +343,9 @@ namespace Hardware
 			{
 				Console.Write(i); Console.WriteLine( "  "+h[i]);
 			}
+			
+			 Console.WriteLine("CLock Test");
+			Clock.InteruptClock();
 
 
 
