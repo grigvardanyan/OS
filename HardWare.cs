@@ -2,12 +2,12 @@ using System;
 using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
-
+using System.Timers;
 namespace Hardware
 {
 class Clock
     {
-        //We will cause this method in process of initializing of Virtual Hardware
+        //We will cause this method in process of initializing our Virtual Hardware
         static public void InteruptClock()
         {
             TimeInit();
