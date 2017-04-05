@@ -3,37 +3,30 @@ using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Timers;
+
 namespace Hardware
 {
-class Clock
-    {
-        //We will cause this method in process of initializing our Virtual Hardware
-        static public void InteruptClock()
-        {
-            TimeInit();
-        }
-        //This method will Initailize our clock
-        private static void TimeInit()
-        {
-            time = new System.Timers.Timer(2000);
-            time.Elapsed += InteruptMassage;
-            time.AutoReset = true;
-            time.Enabled = true;
-        }
-        //This method each 2 second(for example) will sent interupt.(we are still thinking how often it should be) 
-        private static void InteruptMassage(object obj, ElapsedEventArgs second)
-        {
-            
-            //In future we will add event in this block
-            Console.WriteLine("-{Interupt 0}", ++count);//Test massage
-        }
-        //Our fields
-        
-        private static System.Timers.Timer time;//
-        static int count = 0;//Test filed
 
-        
-    }
+	class Clock{
+		private static System.Timers.Timer timer;
+		private static int count = 0;
+		public static void SetTimer()
+		{
+			
+			timer = new System.Timers.Timer(200);
+
+			timer.Elapsed += OnTimedEvent;
+			timer.AutoReset = true;
+			timer.Enabled = true;
+		}
+		private static void OnTimedEvent(Object source, ElapsedEventArgs e)
+		{
+			
+			Console.WriteLine("Clock  -Interapt-  count ::  {0}",
+			++count);
+		}
+	}
+
 	class Monitor{
 		public static void Output(object obj){
 			Console.WriteLine (obj);
@@ -56,7 +49,7 @@ class Clock
 	{
 		public static readonly int THWB = 1;//thread write bytes
 
-		public static readonly int THRB = 1;//thraed read bytes
+		public static readonly int THRB = 5;//thraed read bytes
 
 		public static event WriteEndHandler WriteHandler = null;//= WHand;
 
@@ -149,7 +142,7 @@ class Clock
 						dataThread[i] = data[i + currentPosition];
 					}
 
-					newThraed.Start(new ToWrite(dataThread, (currentPosition + start), length));
+					newThraed.Start(new ToWrite(dataThread, (currentPosition + start), length ));//NAYEL
 
 					currentPosition += length;
 
@@ -311,15 +304,15 @@ class Clock
 	{
 		public static void Main(string[] args)
 		{
-			
+			Clock.SetTimer ();
 			int intValue = 82;
 			byte[] intValueOnByteArray = BitConverter.GetBytes(intValue);
 
-			// HDD.Write(intValueOnByteArray, 18);
+			 HDD.Write(intValueOnByteArray, 25);
 
 			intValue = 19;
 			//intValueOnByteArray = BitConverter.GetBytes(intValue);
-			HDD.Write(intValueOnByteArray, 24);
+			//HDD.Write(intValueOnByteArray, 24);
 
 
 			byte[] h = new byte[40];
@@ -343,9 +336,6 @@ class Clock
 			{
 				Console.Write(i); Console.WriteLine( "  "+h[i]);
 			}
-			
-			 Console.WriteLine("CLock Test");
-			Clock.InteruptClock();
 
 
 
