@@ -28,6 +28,7 @@ namespace FileSystem
                 if (GetArrayID(i) == 0)
                 {
                     SetArrayID(i, 1);
+                    SuperBlock.CurrentInodesCount = SuperBlock.CurrentInodesCount + 1;
                     return i;
                 }
             return 0;
