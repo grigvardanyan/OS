@@ -295,9 +295,7 @@ namespace FileSystem
                 }
                 return inodeDirStart;
             }
-            set
-            {
-            }
+           
         }
 
         private static int inodeDirSize = -1;// 32*80 
