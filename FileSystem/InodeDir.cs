@@ -15,7 +15,7 @@ namespace FileSystem
 
 		}
 
-		public byte[] arrayRef = new byte[64];//0 - 51 inodeID  52- 63 inodeDirID
+		private byte[] arrayRef = new byte[64];//0 - 51 inodeID  52- 63 inodeDirID
 		public byte dirID;
 
 		public byte GetArrayRef(int index)
