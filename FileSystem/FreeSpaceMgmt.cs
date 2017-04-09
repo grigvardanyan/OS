@@ -30,6 +30,7 @@ namespace FileSystem
                 if (GetArrayBlock(i) == 0)
                 {
                     SetArrayBlock(i, 1);
+					SuperBlock.FreeBlocksCount = SuperBlock.FreeBlocksCount - 1;
                     return i;
                 }
             }
