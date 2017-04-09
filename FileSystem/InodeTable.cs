@@ -17,6 +17,14 @@ namespace FileSystem
         }
         public static void SetArrayID(int index, byte value)
         {
+			
+			if (value == 0) {
+				SuperBlock.CurrentInodesCount = SuperBlock.CurrentInodesCount - 1;
+
+			} else {
+				SuperBlock.CurrentInodesCount = SuperBlock.CurrentInodesCount + 1;
+			}
+
             arrayID[index] = value;
             HDD.Write(new byte[1] { value }, SuperBlock.InodeTableStart + index);
             while (!HDD.isNullWriteHandler()) ;
@@ -28,7 +36,6 @@ namespace FileSystem
                 if (GetArrayID(i) == 0)
                 {
                     SetArrayID(i, 1);
-                    SuperBlock.CurrentInodesCount = SuperBlock.CurrentInodesCount + 1;
                     return i;
                 }
             return 0;
