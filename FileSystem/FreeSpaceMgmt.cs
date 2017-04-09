@@ -9,6 +9,11 @@ namespace FileSystem
         private static byte[] arrayBlock = new byte[SuperBlock.MaxBlocks];//0 if free else 1 
         public static void SetArrayBlock(int index, byte value)
         {
+			if (value == 0) {
+				SuperBlock.FreeBlocksCount = SuperBlock.FreeBlocksCount + 1;
+			} else
+				SuperBlock.FreeBlocksCount = SuperBlock.FreeBlocksCount - 1;
+
             arrayBlock[index] = value;
             HDD.Write(new byte[1] { value }, SuperBlock.FreeSpaceMgmtStart + index);
             while (!HDD.isNullWriteHandler()) ;
@@ -30,8 +35,7 @@ namespace FileSystem
                 if (GetArrayBlock(i) == 0)
                 {
                     SetArrayBlock(i, 1);
-					SuperBlock.FreeBlocksCount = SuperBlock.FreeBlocksCount - 1;
-                    return i;
+					return i;
                 }
             }
 
