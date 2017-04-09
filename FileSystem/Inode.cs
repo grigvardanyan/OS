@@ -4,7 +4,6 @@ using Hardware;
 namespace FileSystem
 {
     
-
     class Inode
     {
         //ID > 128 error 
@@ -30,15 +29,27 @@ namespace FileSystem
         }
 
         // index <= BlockCount
-        public void SetArrayBlock(int index, int number) // index , number block
+        public void SetArrayBlock(int index, int number = -1) // index , number block
         {
             byte[] buffer = new byte[4];
-            buffer = BitConverter.GetBytes(number);
+            
+
+			buffer = BitConverter.GetBytes(number);
             HDD.Write(buffer, SuperBlock.InodeStart + fileID * SuperBlock.InodeSize + index);
-            arrayBlocks[index] = number;
+
+			if (number == -1) {
+				FreeSpaceMgmt.SetArrayBlock (arrayBlocks [index], 0);
+				blockCount = blockCount - 1;
+				arrayBlocks[index] = 0;
+
+			} else {
+				blockCount = blockCount + 1;
+				FreeSpaceMgmt.SetArrayBlock (number, 1);//update
+				arrayBlocks[index] = number;
+			}            
         }
 
-        private byte fileID;
+   		private byte fileID;
 
         private int blockCount;//= -1;
         private bool boolBlockCount = false;
