@@ -32,6 +32,15 @@ namespace FileSystem
 		// index <= BlockCount
 		public void SetArrayRef(int index, byte number) // index  if index > 52 numeber is dir else inode, number dir or inode
 		{
+			if (index < 52) {
+				if (number == 0) {
+					InodeTable.SetArrayID (GetArrayRef (index), 0);
+				}
+			} else if (number == 0) {
+				InodeDirTable.SetArrayDirID (GetArrayRef (index), 0);			
+			}
+
+
 			byte[] buffer = new byte[1];
 			buffer[0] = number;
 			HDD.Write(buffer, SuperBlock.InodeDirStart + dirID * SuperBlock.InodeDirSize + index);
