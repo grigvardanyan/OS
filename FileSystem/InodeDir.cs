@@ -9,7 +9,7 @@ namespace FileSystem
 			if (ID == 255)
 			{
 				dirID = InodeDirTable.GetDirID();
-				Console.WriteLine(dirID);
+				//Console.WriteLine(dirID);
 			}
 			else dirID = ID;
 
