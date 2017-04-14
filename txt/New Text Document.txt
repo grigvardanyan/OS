@@ -1,0 +1,100 @@
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Text;
+using Hardware;
+
+namespace asf
+{
+
+    static class FS
+    {
+        static public FS()
+        {
+            byte[] buffer = new byte[1];
+            HDD.Read(ref buffer, 0);
+            while(HDD.isNullReadHandler())
+            SuperBlock.blockSize = 4;
+ 
+        }
+        class SuperBlock
+        {
+            static public byte blockSize;
+            static public byte blockStart;
+            static public int partitionCurrentSize;
+            static public int blockCounts;
+            static public byte FSID;
+            static public int inodeBlockCounts;
+            static public int indoeSize;
+            static public byte inodeCount;
+             //FS components start
+            static public int FSM_Start;
+            static public int InodeStart;
+
+        }
+        class FSM
+        {
+            static byte[] arrayBlocks=new byte[SuperBlock.blockCounts];
+            static public int GetBlock()
+            {
+                Random rand=new Random();
+                int blockId;
+                while (true)
+                {
+                    blockId = rand.Next() % SuperBlock.blockCounts;
+                    if (arrayBlocks[blockId] == 0)
+                    {
+                        arrayBlocks[blockId] = 1;
+                        return blockId;
+                    }
+                }
+ 
+            }
+
+
+        }
+        class Inode
+        {
+            public Inode()
+            {
+                ID = InodeTable.GetID();
+            }
+            public byte ID;
+            public int creatTime;
+            public int modifyTime;
+            public int accessTime;
+            public int blockCounts;
+            public int inodeSize;
+            public int[] blockArray=new int[SuperBlock.inodeBlockCounts];
+        }
+        class InodeDirect
+        { 
+        }
+        class InodeTable
+        {
+            static public byte[] table = new byte[SuperBlock.inodeCount];
+            static public byte GetID()
+            {
+                Random rand = new Random();
+                byte InodeID;
+                while (true)
+                {
+                    InodeID = (byte)(rand.Next() % SuperBlock.inodeCount);
+                    if (table[InodeID] == 0)
+                    {
+                        table[InodeID] = 1;
+                        return InodeID;
+                    }
+                }
+            }
+            
+        }
+    }
+
+    class Program
+    {
+        static void Main(string[] args)
+        {
+        }
+    }
+}
