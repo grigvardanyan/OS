@@ -1,0 +1,106 @@
+using System;
+using System.Collections.Generic;
+using System.Data.SqlClient;
+using System.Linq;
+using System.Text;
+using System.Threading.Tasks;
+
+
+namespace Hardware {
+    class HardDisk {
+        static private string GetConnectionString()
+        {
+            // To avoid storing the connection string in your code, 
+            // you can retrieve it from a configuration file, using the 
+            // System.Configuration.ConfigurationSettings.AppSettings property 
+            return "Data Source=(local);Initial Catalog=OperationSystem;"
+                + "Integrated Security=SSPI;";
+        }
+
+        public static SqlConnection connection = new SqlConnection(GetConnectionString());
+        private static void Open() { connection.Open(); }
+        public static void Close() { connection.Close(); }
+        private static bool isOpen = false;
+        public static void Write(string com) {
+            if (!isOpen) { Open(); isOpen = true; }
+
+            SqlCommand command = new SqlCommand(com, connection);
+            command.ExecuteScalar();
+
+        }
+
+        public static void read(ref byte[] c,int offset) {
+          
+
+        }
+
+        public static byte[] Read(string com) {
+            if (!isOpen) { Open(); isOpen = true; }
+
+
+
+            SqlCommand command = new SqlCommand(com, connection);
+
+            SqlDataReader result =  command.ExecuteReader();
+
+            command.Cancel();
+            result.Read();
+
+            return GetBytes(result, 1);
+          
+
+        }
+        private static byte[] GetBytes(SqlDataReader reader, int ordinal)
+        {
+            byte[] result = null;
+
+            if (!reader.IsDBNull(ordinal))
+            {
+                 
+                long size  = reader.GetBytes(ordinal, 0, null, 0, 0); //get the length of data 
+      
+                result = new byte[size];
+
+                int bufferSize = 1024;
+
+                long bytesRead = 0;
+
+                int curPos = 0;
+
+                while (bytesRead < size)
+                {
+                    bytesRead += reader.GetBytes(ordinal, curPos, result, curPos, bufferSize);
+                    curPos += bufferSize;
+                
+                }
+               
+            }
+
+            return result;
+        }
+    }
+}
+
+namespace SqlConnect
+{
+    class Program
+    {
+      
+        static void Main(string[] args)
+        {
+            
+            //Hardware.HardDisk.Write("insert into SuperBlock values(5, 101, 500, 18)");
+            
+            byte[] b =  Hardware.HardDisk.Read("select * from SuperBlock");
+
+            for (int i = 0; i < b.Length; i++) Console.WriteLine(b[i]);
+            
+            string s = System.Text.Encoding.ASCII.GetString(b);
+            Console.WriteLine(s);
+
+            Hardware.HardDisk.Close();
+
+
+        }
+    }
+}
