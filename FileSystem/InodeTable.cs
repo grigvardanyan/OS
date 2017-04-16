@@ -1,41 +1,30 @@
 using Hardware;
 
-namespace FileSystem
+partial class FileSystem
 {
-    //Table ID free or not
     class InodeTable
     {
-        private static byte[] arrayID = new byte[128];
-        public static byte GetArrayID(int index)
-        {
+        private static byte[] arrayInodeTable = new byte[SuperBlock.MaxBlocks];
+        public static void SetArrayInodeTable(int index, byte value) {
+            arrayInodeTable[index] = value;
+            HardDisk.Write(new byte[1] { value }, SuperBlock.InodeTableStart + index);
+        }
+        public static byte GetArrayInodeTable(int index) {
             byte[] buffer = new byte[1];
-            HDD.Read(ref buffer, SuperBlock.InodeTableStart + index);
-            while (!HDD.isNullReadHandler()) ;
-            
-            arrayID[index] = buffer[0];
-            return arrayID[index];
-        }
-        public static void SetArrayID(int index, byte value)
-        {
-			
-			if (value == 0) {
-				SuperBlock.CurrentInodesCount = SuperBlock.CurrentInodesCount - 1;
 
-			} else {
-				SuperBlock.CurrentInodesCount = SuperBlock.CurrentInodesCount + 1;
-			}
-
-            arrayID[index] = value;
-            HDD.Write(new byte[1] { value }, SuperBlock.InodeTableStart + index);
-            while (!HDD.isNullWriteHandler()) ;
+            HardDisk.Read(ref buffer, SuperBlock.InodeTableStart + index,1);
+         
+            arrayInodeTable[index] = buffer[0];
+            return arrayInodeTable[index];
         }
-        public static byte GetID()
+
+        public static int GetInode()
         {
 
-            for (byte i = 0; i < arrayID.Length; i++)
-                if (GetArrayID(i) == 0)
+            for (int i = 0; i<arrayInodeTable.Length; i++)
+                if (GetArrayInodeTable(i) == 0)
                 {
-                    SetArrayID(i, 1);
+                    SetArrayInodeTable(i, 1);
                     return i;
                 }
             return 0;
