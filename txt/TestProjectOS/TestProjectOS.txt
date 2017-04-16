@@ -1,2 +1,0 @@
-HardDisk Read and Write  working without threads
-name Test becaous this project all file in one folder  and i (@Gor32) don't runing but commpile is going 
