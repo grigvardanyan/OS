@@ -1,56 +1,63 @@
-using System;
 using Hardware;
+using System;
 
-namespace FileSystem
+partial class FileSystem
 {
-	class InodeDir
-	{
-		public InodeDir(byte ID = 255) {
-			if (ID == 255)
-			{
-				dirID = InodeDirTable.GetDirID();
-				//Console.WriteLine(dirID);
-			}
-			else dirID = ID;
+    class InodeDir
+    {
+        private byte dirID;
 
-		}
+        public InodeDir(byte ID = 255)
+        {
+            if (ID == 255)
+            {
+                dirID = (byte)InodeDirTable.GetInodeDir();
+            }
+            else dirID = ID;
+        }
 
-		private byte[] arrayRef = new byte[64];//0 - 51 inodeID  52- 63 inodeDirID
-		public byte dirID;
+        private int[] arrayFile = new int[SuperBlock.InodeMaxCountInDir];
 
-		public byte GetArrayRef(int index)
-		{
+        private int[] arrayDir = new int[SuperBlock.DirMaxCountInDir];
 
-			byte[] buffer = new byte[1];
-			HDD.Read(ref buffer, SuperBlock.InodeDirStart + dirID * SuperBlock.InodeDirSize + index);
-			while (!HDD.isNullReadHandler()) ;
-			arrayRef[index] = buffer[0];
+        public int GetArrayDir(int index)
+        {
 
-			return arrayRef[index];
-		}
+            byte[] buffer = new byte[4];
+            HardDisk.Read(ref buffer, SuperBlock.InodeDirStart + dirID * SuperBlock.InodeDirSize + 4 * SuperBlock.InodeMaxCountInDir + 4 * index);
 
-		// index <= BlockCount
-		public void SetArrayRef(int index, byte number) // index  if index > 52 numeber is dir else inode, number dir or inode
-		{
-			if (index < 52) {
-				if (number == 0) {
-					InodeTable.SetArrayID (GetArrayRef (index), 0);
-				}
-			} else if (number == 0) {
-				InodeDirTable.SetArrayDirID (GetArrayRef (index), 0);			
-			}
+            arrayDir[index] = BitConverter.ToInt32(buffer, 0);
 
+            return arrayDir[index];
+        }
 
-			byte[] buffer = new byte[1];
-			buffer[0] = number;
-			HDD.Write(buffer, SuperBlock.InodeDirStart + dirID * SuperBlock.InodeDirSize + index);
-			while (!HDD.isNullWriteHandler()) ;
-			arrayRef[index] = number;
-		}
+        public int GetArrayFile(int index)
+        {
 
+            byte[] buffer = new byte[4];
+            HardDisk.Read(ref buffer, SuperBlock.InodeDirStart + dirID * SuperBlock.InodeDirSize + 4 * index);
 
-	}
+            arrayFile[index] = BitConverter.ToInt32(buffer, 0);
 
+            return arrayFile[index];
+        }
 
+        public void SetArrayDir(int index, int number)
+        {
+            byte[] buffer = new byte[4];
+            buffer = BitConverter.GetBytes(SuperBlock.InodeDirStart + SuperBlock.InodeDirSize * number);
+            HardDisk.Write(buffer, SuperBlock.InodeDirStart + dirID * SuperBlock.InodeDirSize + 4 * SuperBlock.InodeMaxCountInDir + 4 * index);
+
+            arrayFile[index] = SuperBlock.InodeDirStart + SuperBlock.InodeDirSize * number;
+        }
+
+        public void SetArrayFile(int index, int number)
+        {
+            byte[] buffer = new byte[4];
+            buffer = BitConverter.GetBytes( SuperBlock.InodeStart + SuperBlock.InodeSize * number);
+            HardDisk.Write(buffer, SuperBlock.InodeDirStart + dirID * SuperBlock.InodeDirSize + 4 * index);
+
+            arrayFile[index] = SuperBlock.InodeStart + SuperBlock.InodeSize * number;
+        }
+    }
 }
-
