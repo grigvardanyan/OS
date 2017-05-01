@@ -1,12 +1,40 @@
 using static Kernel.FileSystem;
 using Kernel;
+using System;
+using System.Reflection;
+using System.Linq;
 
+enum ECall { Creat, Open, Read, Write }
+
+[AttributeUsage(AttributeTargets.Method)]
+class MethodCall : Attribute
+{
+    public MethodCall(ECall call)
+    {
+        this.call = call;
+    }
+    public ECall call
+    {
+        get;
+        set;
+    }
+}
 
 class SysCall
 {
-    private static readonly int MAX_OPEN_FILES = 20;
-    private static FileDescriptor[] table = new FileDescriptor[MAX_OPEN_FILES];
-    private static int currentOpenFiles = -1;
+
+    public static Object Call(ECall call,object[] parametrs)
+    {
+        var methodInfo = GetMethodInfo(call);
+        return methodInfo.Invoke(new SysCall(), parametrs);
+    }
+    private static MethodInfo GetMethodInfo(ECall id)
+    {
+        return typeof(SysCall).GetMethods().
+            Where(x => x.GetCustomAttributes(false).OfType<MethodCall>().Count() > 0)
+            .Where(x => x.GetCustomAttributes(false).OfType<MethodCall>().First().call == id).Single();
+    }
+
     private static string[] GetArrayOfString(string path)
     {
         int countSlash = 0;
@@ -83,6 +111,7 @@ class SysCall
         return -1;
     }
 
+    [MethodCall(ECall.Open)]
     public static int Open(string path, FileSystem.FileAccess access)
     {
         string[] stringDir = GetArrayOfString(path);
@@ -97,6 +126,7 @@ class SysCall
         return currentOpenFiles;
     }
 
+    [MethodCall(ECall.Creat)]
     public static void Creat(string path)
     {
         string[] stringDir = GetArrayOfString(path);
@@ -113,18 +143,19 @@ class SysCall
         //must in deicertory add inode ID 
     }
 
+    [MethodCall(ECall.Write)]
     public static void Write(int file, byte[] data)
     {
         FileDescriptor f = table[file];
         if (f.fileAccess != FileAccess.Write || f.fileAccess != FileAccess.ReadWrite) { /*not access*/}
 
         Inode inode = new Inode((byte)f.fileID);
-       
+
         //if (positionBegin == positionEnd) Hardware.HardDisk.Write(data, inode.GetArrayBlock(positionBegin)+f.offset);
         int startBlock = f.offset / SuperBlock.BlockSize;
         int startPosition = f.offset % SuperBlock.BlockSize;
         //write   
-        Hardware.HardDisk.Write(data, inode.GetArrayBlock(startBlock)+startPosition,SuperBlock.BlockSize - startPosition);
+        Hardware.HardDisk.Write(data, inode.GetArrayBlock(startBlock) + startPosition, SuperBlock.BlockSize - startPosition);
 
         int endBlock = (f.offset + data.Length) / SuperBlock.BlockSize;
         int currentPositionInData = SuperBlock.BlockSize - startPosition;
@@ -149,18 +180,19 @@ class SysCall
         f.offset += data.Length;
     }
 
-    //read some method only Reading in Blocks
-    public static void Read(int file, ref byte[] data) {
+    [MethodCall(ECall.Read)]
+    public static void Read(int file, ref byte[] data)
+    {
         FileDescriptor f = table[file];
         if (f.fileAccess != FileAccess.Read || f.fileAccess != FileAccess.ReadWrite) { /*not access*/}
 
         Inode inode = new Inode((byte)f.fileID);
-        
+
         //if (positionBegin == positionEnd) Hardware.HardDisk.Read(ref data, inode.GetArrayBlock(positionBegin)+f.offset);
         int startBlock = f.offset / SuperBlock.BlockSize;
         int startPosition = f.offset % SuperBlock.BlockSize;
         //Read   
-        Hardware.HardDisk.Read(ref data, inode.GetArrayBlock(startBlock)+startPosition,SuperBlock.BlockSize - startPosition);
+        Hardware.HardDisk.Read(ref data, inode.GetArrayBlock(startBlock) + startPosition, SuperBlock.BlockSize - startPosition);
 
         int endBlock = (f.offset + data.Length) / SuperBlock.BlockSize;
         int currentPositionInData = SuperBlock.BlockSize - startPosition;
@@ -185,5 +217,9 @@ class SysCall
 
         f.offset += data.Length;
     }
-}
 
+    private static readonly int MAX_OPEN_FILES = 20;
+    private static FileDescriptor[] table = new FileDescriptor[MAX_OPEN_FILES];
+    private static int currentOpenFiles = -1;
+
+}
